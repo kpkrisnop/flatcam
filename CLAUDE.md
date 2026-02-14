@@ -23,6 +23,7 @@ python flatcam.py --shellvar=<values>      # Pass variables to script
 
 User data directory: `~/.FlatCAM/` (Unix) or `%APPDATA%\FlatCAM` (Windows).
 Log file: `~/.FlatCAM/log.txt`.
+Tools database: `~/.FlatCAM/tools_db_<version>.FlatDB` (JSON format).
 
 ## Building Documentation
 
@@ -70,3 +71,29 @@ cd doc && make html    # Build Sphinx docs
 ### No Automated Test Suite
 
 The project does not have an integrated test framework (no pytest/unittest). Testing is manual. If adding tests, place them alongside the relevant module or in a new `tests/` directory.
+
+## Critical Subsystems and Known Pitfalls
+
+### Tool Data Flow (frequent source of bugs)
+
+Tools are stored as dicts in each object's `.tools` attribute. The key is a tool number (int), the value contains `'tooldia'`, `'data'` (a dict of parameters), `'solid_geometry'`, and type-specific keys like `'drills'`/`'slots'` for Excellon.
+
+Parameter keys are namespaced by tool type: `tools_drill_*`, `tools_mill_*`, `tools_iso_*`, `tools_paint_*`, `tools_ncc_*`, `tools_cutout_*`. The `tool_target` field in the DB is an **integer** (0=General, 1=Milling, 2=Drilling, 3=Isolation, 4=Paint, 5=NCC, 6=Cutout) — never compare it to a translated string.
+
+**CNC generation parameter chain:** Tool plugins (e.g. `ToolMilling.py`) extract parameters from `tools_dict[uid]['data']`, then pass them to `camlib.py` methods (`generate_from_geometry_2`, `geometry_tool_gcode_gen`, `excellon_tool_gcode_gen`). When adding new per-tool parameters, you must thread them through: `defaults.py` → `appDatabase.py` (new-tool template) → plugin extraction → camlib method signature/usage. Parameters that read from `self.app.options` instead of the tool dict will not be per-tool customizable.
+
+**Tool database matching:** `replace_tools()` in each plugin matches Excellon/Geometry tools against the Tools Database by diameter. It filters DB keys by namespace prefix (e.g. `tools_drill_*` for drilling) and skips other `tools_*` keys. When adding new parameters to the DB template in `appDatabase.py`, ensure the key follows the correct namespace.
+
+### Worker Thread / UI Safety
+
+Worker threads (`appWorker.py`) run operations like move-to-origin, CNC generation, etc. They must **never** access Qt widgets directly. Object `.ui` panels get destroyed when the user switches objects or closes tabs, so any widget access from a worker can hit `RuntimeError: wrapped C/C++ object has been deleted`.
+
+**Pattern to follow:** Always wrap UI access in worker-callable methods with `try/except (RuntimeError, AttributeError)`. Key danger spots: `set_offset_values()`, `plot()`, `ui_disconnect()`, and any signal handler that touches `self.ui.*` widgets.
+
+### Tool Dict Ownership
+
+When copying tool dicts between the plugin and the object, always use `deepcopy()`. Assigning `self.excellon_tools = self.excellon_obj.tools` creates a reference — mutations to the plugin's copy will corrupt the object's original tools. This applies to all tool plugins, not just drilling.
+
+### Floating-Point Tool Diameter Matching
+
+Tool diameters are floats. When comparing diameters (e.g. matching against the Tools Database), always truncate both sides with `self.app.dec_format(float(dia), self.decimals)` before using `==`. Raw float comparison will fail due to precision differences between parser output and database storage.

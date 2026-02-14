@@ -383,18 +383,30 @@ class GerberObject(FlatCAMObj, Gerber):
             self.ui_connect()
 
     def ui_connect(self):
-        for row in range(self.ui.apertures_table.rowCount()):
+        try:
+            row_count = self.ui.apertures_table.rowCount()
+        except (RuntimeError, AttributeError):
+            # UI widget has been deleted
+            return
+
+        for row in range(row_count):
             try:
                 self.ui.apertures_table.cellWidget(row, 5).clicked.disconnect(self.on_mark_cb_click_table)
-            except (TypeError, AttributeError):
+            except (TypeError, AttributeError, RuntimeError):
                 pass
-            self.ui.apertures_table.cellWidget(row, 5).clicked.connect(self.on_mark_cb_click_table)
+            try:
+                self.ui.apertures_table.cellWidget(row, 5).clicked.connect(self.on_mark_cb_click_table)
+            except (AttributeError, RuntimeError):
+                pass
 
         try:
             self.ui.mark_all_cb.clicked.disconnect(self.on_mark_all_click)
-        except (TypeError, AttributeError):
+        except (TypeError, AttributeError, RuntimeError):
             pass
-        self.ui.mark_all_cb.clicked.connect(self.on_mark_all_click)
+        try:
+            self.ui.mark_all_cb.clicked.connect(self.on_mark_all_click)
+        except (AttributeError, RuntimeError):
+            pass
 
     def ui_disconnect(self):
         try:
@@ -932,7 +944,13 @@ class GerberObject(FlatCAMObj, Gerber):
             visible = kwargs['visible']
 
         # if the Follow Geometry checkbox is checked then plot only the follow geometry
-        if self.ui.follow_cb.get_value():
+        try:
+            follow_plot = self.ui.follow_cb.get_value()
+        except (RuntimeError, AttributeError):
+            # UI widget may have been deleted (e.g. called from worker thread after tab closed)
+            follow_plot = False
+
+        if follow_plot:
             geometry = self.follow_geometry
         else:
             geometry = self.solid_geometry
@@ -1109,11 +1127,16 @@ class GerberObject(FlatCAMObj, Gerber):
 
         try:
             aperture = int(self.ui.apertures_table.item(cw_row, 1).text())
-        except AttributeError:
-            self.ui_connect()
+        except (AttributeError, RuntimeError):
+            # UI widget deleted; skip reconnecting dead signals
             return
 
-        if self.ui.apertures_table.cellWidget(cw_row, 5).isChecked():
+        try:
+            is_checked = self.ui.apertures_table.cellWidget(cw_row, 5).isChecked()
+        except (AttributeError, RuntimeError):
+            return
+
+        if is_checked:
             self.marked_rows.append(True)
             # self.plot_aperture(color='#2d4606bf', marked_aperture=aperture, visible=True)
             color = self.app.options['global_sel_draw_color']

@@ -4519,21 +4519,29 @@ class App(QtCore.QObject):
                         pass
 
                 for obj in obj_list:
-                    obj.plot()
+                    try:
+                        obj.plot()
+                    except (RuntimeError, AttributeError) as e:
+                        self.log.debug("on_move2origin: plot() failed for %s -> %s" %
+                                       (obj.obj_options.get('name', '?'), str(e)))
                 self.plotcanvas.fit_view()
 
                 for obj in obj_list:
                     out_name = obj.obj_options["name"]
 
-                    if obj.kind == 'gerber':
-                        obj.source_file = self.f_handlers.export_gerber(
-                            obj_name=out_name, filename=None, local_use=obj, use_thread=False)
-                    elif obj.kind == 'excellon':
-                        obj.source_file = self.f_handlers.export_excellon(
-                            obj_name=out_name, filename=None, local_use=obj, use_thread=False)
-                    elif obj.kind == 'geometry':
-                        obj.source_file = self.f_handlers.export_dxf(
-                            obj_name=out_name, filename=None, local_use=obj, use_thread=False)
+                    try:
+                        if obj.kind == 'gerber':
+                            obj.source_file = self.f_handlers.export_gerber(
+                                obj_name=out_name, filename=None, local_use=obj, use_thread=False)
+                        elif obj.kind == 'excellon':
+                            obj.source_file = self.f_handlers.export_excellon(
+                                obj_name=out_name, filename=None, local_use=obj, use_thread=False)
+                        elif obj.kind == 'geometry':
+                            obj.source_file = self.f_handlers.export_dxf(
+                                obj_name=out_name, filename=None, local_use=obj, use_thread=False)
+                    except (RuntimeError, AttributeError) as e:
+                        self.log.debug("on_move2origin: export failed for %s -> %s" %
+                                       (out_name, str(e)))
                 self.inform.emit('[success] %s...' % _('Origin set'))
 
         if use_thread is True:
