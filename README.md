@@ -104,7 +104,7 @@ Full Python dependency list is in `requirements.txt`.
 Install via the Homebrew tap:
 
 ```bash
-brew tap <your-github-username>/flatcam-evo
+brew tap KP-Krisnop/flatcam-evo
 brew install flatcam-evo
 ```
 
@@ -113,9 +113,6 @@ Run:
 ```bash
 flatcam
 ```
-
-> **Note:** Replace `<your-github-username>` with the actual tap owner once the tap is
-> published.
 
 ---
 
@@ -173,7 +170,7 @@ sudo apt-get install python3.11 python3.11-pip python3.11-venv python3-tk \
 **2. Clone the repository:**
 
 ```bash
-git clone https://github.com/<your-github-username>/flatcam-evo.git
+git clone https://github.com/KP-Krisnop/flatcam-evo.git
 cd flatcam-evo
 ```
 
@@ -227,7 +224,7 @@ matching your Python version.
 **3. Clone the repository:**
 
 ```cmd
-git clone https://github.com/<your-github-username>/flatcam-evo.git
+git clone https://github.com/KP-Krisnop/flatcam-evo.git
 cd flatcam-evo
 ```
 
@@ -263,7 +260,7 @@ User data will then be stored in the `config\` folder next to the application.
 If you have [Mamba](https://conda-forge.org/download/) or Conda installed:
 
 ```bash
-git clone https://github.com/<your-github-username>/flatcam-evo.git
+git clone https://github.com/KP-Krisnop/flatcam-evo.git
 cd flatcam-evo
 mamba env create -f environment.yml
 mamba activate flatcam
