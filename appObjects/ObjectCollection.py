@@ -1090,7 +1090,17 @@ class ObjectCollection(QtCore.QAbstractItemModel):
         return obj_list
 
     def update_view(self):
-        self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())   # noqa
+        # Qt6 requires valid indices for dataChanged; iterate each group and emit for its children.
+        root_index = QtCore.QModelIndex()
+        for group_row in range(self.root_item.child_count()):
+            group_index = self.index(group_row, 0, root_index)
+            if not group_index.isValid():
+                continue
+            child_count = self.rowCount(group_index)
+            if child_count > 0:
+                top = self.index(0, 0, group_index)
+                bottom = self.index(child_count - 1, 0, group_index)
+                self.dataChanged.emit(top, bottom)
 
     def on_row_activated(self, index):
         if index.isValid():
