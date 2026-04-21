@@ -1633,6 +1633,8 @@ class ToolDrilling(Excellon, AppTool):
     def on_pp_changed(self):
         current_pp = self.ui.pp_excellon_name_cb.get_value()
 
+        self.app.options["tools_drill_ppname_e"] = current_pp
+
         if "toolchange_probe" in current_pp.lower():
             self.ui.pdepth_entry.setVisible(True)
             self.ui.pdepth_label.show()
