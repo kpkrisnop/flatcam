@@ -2225,7 +2225,7 @@ class ToolDrilling(Excellon, AppTool):
                                     )
 
                             slot_no = 0
-                            convert_slots = self.excellon_tools[selected_id]['data'].get(['tools_drill_drill_slots'], False)
+                            convert_slots = self.excellon_tools[selected_id]['data'].get('tools_drill_drill_slots', False)
                             if 'slots' in self.excellon_tools[selected_id] and convert_slots is False:
                                 slot_no = len(self.excellon_tools[selected_id]['slots'])
                                 for eslot in self.excellon_tools[selected_id]['slots']:
